@@ -1,0 +1,75 @@
+# owasp-top10.rules
+
+# Rule to detect SQL Injection
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"SQL Injection detected"; \
+    flow:to_server,established; \
+    content:"';"; http_uri; \
+    reference:url,owasp.org; \
+    sid:100001; rev:1;)
+
+# Rule to detect Cross-Site Scripting (XSS)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Cross-Site Scripting (XSS) detected"; \
+    flow:to_server,established; \
+    content:"<script>"; http_client_body; \
+    reference:url,owasp.org; \
+    sid:100002; rev:1;)
+
+# Rule to detect Remote File Inclusion (RFI)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Remote File Inclusion (RFI) detected"; \
+    flow:to_server,established; \
+    content:"/etc/passwd"; http_uri; \
+    reference:url,owasp.org; \
+    sid:100003; rev:1;)
+
+# Rule to detect Local File Inclusion (LFI)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Local File Inclusion (LFI) detected"; \
+    flow:to_server,established; \
+    content:"../../etc/passwd"; http_uri; \
+    reference:url,owasp.org; \
+    sid:100004; rev:1;)
+
+# Rule to detect Command Injection
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Command Injection detected"; \
+    flow:to_server,established; \
+    content:"|"; http_uri; \
+    reference:url,owasp.org; \
+    sid:100005; rev:1;)
+
+# Rule to detect Unvalidated Redirects and Forwards
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Unvalidated Redirects and Forwards detected"; \
+    flow:to_server,established; \
+    content:"redirect="; http_uri; \
+    reference:url,owasp.org; \
+    sid:100006; rev:1;)
+
+# Rule to detect Insecure Direct Object References (IDOR)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Insecure Direct Object References (IDOR) detected"; \
+    flow:to_server,established; \
+    content:"/user/profile?userid="; http_uri; \
+    reference:url,owasp.org; \
+    sid:100007; rev:1;)
+
+# Rule to detect Cross-Site Request Forgery (CSRF)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Cross-Site Request Forgery (CSRF) detected"; \
+    flow:to_server,established; \
+    content:"csrf_token="; http_uri; \
+    reference:url,owasp.org; \
+    sid:100008; rev:1;)
+
+# Rule to detect Security Misconfigurations
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"Security Misconfiguration detected"; \
+    flow:to_server,established; \
+    content:"/admin.php"; http_uri; \
+    reference:url,owasp.org; \
+    sid:100009; rev:1;)
+
+# Rule

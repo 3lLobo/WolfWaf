@@ -1,0 +1,9 @@
+drop any any -> any any (mac any 00:11:22:33:44:55;)
+alert any any -> any any (mac any 00:AA:BB:CC:DD:EE;)
+drop any any -> any any (mac any 12:34:56:78:90:AB/ff:ff:ff:ff:ff:00;)
+
+alert any any -> any any (mac any !$OUI;)
+drop any any -> any any (mac !$RANGE;)
+alert any any -> any any (mac any !$PATTERN;)
+
+$PATTERN=`^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$`

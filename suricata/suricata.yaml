@@ -1,0 +1,35 @@
+%YAML 1.1
+---
+rule-files:
+  - suricata.rules
+
+outputs:
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+  - elastalert:
+      enabled: yes
+      type: alert
+      match: any
+      index: suricata-alerts
+      elasticsearch:
+        host: elasticsearch_host
+        port: elasticsearch_port
+      alerts:
+        - "elastalert"
+      types:
+        - alert
+        - http.log
+        - dns.log
+      tls:
+        verify: off
+
+# Custom rule configuration for OWASP Top 10 vulnerabilities
+rule-sets:
+  - from-files:
+      - /etc/suricata/rules/suricata.rules
+      - /etc/suricata/rules/emerging_threats.rules
+      # - /etc/suricata/rules/owasp-top10.rules
+      # - /etc/suricata/rules/mac-address.rules
+      # - /etc/suricata/rules/http-user-agents.rules
