@@ -1,0 +1,134 @@
+version: '3'
+
+services:
+  webapp:
+    image: 3llobo/iphuntermap
+    ports:
+      - '5000:3000'
+    expose:
+      - '5000'
+    # Add any additional configurations for your web app service
+
+    # TODO: Find the right network name inside docker. Don't think it's eth0
+  suricata:
+    image: jasonish/suricata
+    command: suricata -c /etc/suricata/suricata.yaml -i eth0
+    volumes:
+      # - ./suricata:/etc/suricata
+      - ./suricata-logs:/var/log/suricata
+    network_mode: "service:webapp"
+    # network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+      # This Suricata service runs as the firewall for the web app, using the oisf/suricata image. It mounts local directories for configuration files and log storage.
+
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx
+    # name: modsecurity
+    volumes:
+      - ./modsecurity:/etc/modsecurity
+      - ./nginx/nginx.conf:/etc/nginx/templates/nginx.conf
+      - ./modsecurity/modsecurity2.conf:/etc/templates/conf.d/modsecurity.conf.template
+      - ./modsecurity-logs/:/var/log/
+    environment:
+      # - PROXY=1
+      # - PROXY_SSL=on
+      # - PARANOIA=4
+      # - METRICS_ALLOW_FROM=172.23.0.1
+      # - SSL_PORT=443
+      - MODSEC_AUDIT_LOG=/var/log/modsec_audit.log
+      - PARANOIA=1
+      - EXECUTING_PARANOIA=2
+      - ENFORCE_BODYPROC_URLENCODED=1
+      - ANOMALY_INBOUND=10
+      - ANOMALY_OUTBOUND=5
+      - ALLOWED_METHODS="GET POST PUT"
+      - ALLOWED_REQUEST_CONTENT_TYPE="text/xml|application/xml|text/plain"
+      - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET="utf-8|iso-8859-1"
+      - ALLOWED_HTTP_VERSIONS="HTTP/1.1 HTTP/2 HTTP/2.0"
+      - RESTRICTED_EXTENSIONS=".cmd/ .com/ .config/ .dll/"
+      - RESTRICTED_HEADERS="/proxy/ /if/"
+      - STATIC_EXTENSIONS="/.jpg/ /.jpeg/ /.png/ /.gif/"
+      - MAX_NUM_ARGS=128
+      - ARG_NAME_LENGTH=50
+      - ARG_LENGTH=200
+      - TOTAL_ARG_LENGTH=6400
+      - MAX_FILE_SIZE=100000
+      - COMBINED_FILE_SIZES=1000000
+      - PROXY=1
+      - TIMEOUT=60
+      - LOGLEVEL=warn
+      - ERRORLOG='/proc/self/fd/2'
+      - USER=daemon
+      - GROUP=daemon
+      - SERVER_ADMIN=root@localhost
+      - SERVER_NAME=localhost
+      - PORT=80
+      - MODSEC_RULE_ENGINE=on
+      - MODSEC_REQ_BODY_ACCESS=on
+      - MODSEC_REQ_BODY_LIMIT=13107200
+      - MODSEC_REQ_BODY_NOFILES_LIMIT=131072
+      - MODSEC_RESP_BODY_ACCESS=on
+      - MODSEC_RESP_BODY_LIMIT=524288
+      - MODSEC_PCRE_MATCH_LIMIT=1000
+      - MODSEC_PCRE_MATCH_LIMIT_RECURSION=1000
+      - VALIDATE_UTF8_ENCODING=1
+      - CRS_ENABLE_TEST_MARKER=1
+    ports:
+      - '80:80'
+      - '433:433'
+    # This ModSecurity service runs as the firewall for the web app, using the owasp/modsecurity image. It mounts a local directory for custom rule configurations.
+
+    # nginx:
+    #   # name: nginx
+    #   image: nginx:latest
+    #   volumes:
+    #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    #     # - .nginx/modsecurity.conf:/etc/nginx/modsecurity.conf
+    #     - ./nginx_log:/var/log/nginx
+    #   ports:
+    #     - '80:80'
+    #   # Start nginx with custom conf
+    #   # entrypoint: /bin/bash -c "nginx -c /etc/nginx/nginx.conf && tail -f /dev/null"
+    #   environment:
+    #     - PORT=80
+    #   depends_on:
+    #     - webapp
+    # The reverse-proxy service uses Nginx to serve traffic on port 80 and forward it to the web app.
+    # Mount the Nginx configuration file (nginx/nginx.conf) and adjust the volume mapping as per your needs.
+
+  zeek:
+    image: zeek/zeek
+    # name: zeek
+    command: zeek -i eth0 -C zeek/zeek-config.zeek
+    volumes:
+      - ./zeek:/zeek
+      - ./zeek-logs:/usr/local/zeek/logs
+    # network_mode: "service:webapp"
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    # This Zeek service captures and analyzes network traffic using the zeek image. Mount local directories for configuration files and log storage.
+
+    # tshark:
+    #   image: toendeavour/tshark
+    #   # name: tshark
+    #   command: -i eth0 -w /captures/capture.pcap
+    #   volumes:
+    #     - ./captures:/captures
+    #   network_mode: host
+    #   cap_add:
+    #     - NET_ADMIN
+    #   # The tshark service captures network traffic on the host interface (eth0) and saves it to a file in the 'captures' directory.
+
+    # logstash:
+    #   # name: logstash
+    #   image: docker.elastic.co/logstash/logstash:8.7.1
+    #   volumes_from:
+    #     - zeek
+    #   volumes:
+    #     - ./logstash-config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf

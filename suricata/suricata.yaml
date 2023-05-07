@@ -1,0 +1,93 @@
+%YAML 1.1
+---
+
+app-layer:
+  protocols:
+    http:
+      enabled: yes
+      memcap: 64mb
+      default-config:
+        enabled: yes
+        detection-ports:
+          dp: 80
+          dp: 8080
+          dp: 8000
+          dp: 5000
+          dp: 8008
+          dp: 591
+          dp: 593
+          dp: 1025-65535
+        http-body-inline: auto
+        http-body-max-inline: 128kb
+        http-body-max: 1mb
+        http-body-logging: no
+        http-body-printable: no
+        http-body-unprintable: no
+        http-body-mode: single-part
+        http-body-process-all: no
+        http-body-limit: 100kb
+        http-body-limit-no-file: 100kb
+        http-body-compression: auto
+        http-body-decompress-limit: 4mb
+        http-body-decompress-depth: 4mb
+        http-body-decompress-window: 4mb
+        http-body-decompress-methods: [ gzip, deflate ]
+        http-body-decompress-max-ratio: 0.8
+        http-body-decompress-min-ratio: 0.2
+
+rule-files:
+  - suricata.rules
+
+outputs:
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+  - http-log:
+      enabled: yes
+      filename: http.log
+      append: yes
+      #extended: yes     # enable this for extended logging information
+      #custom: yes       # enabled the custom logging format (defined by customformat)
+      #customformat: "%{%D-%H:%M:%S}t.%z %{X-Forwarded-For}i %H %m %h %u %s %B %a:%p -> %A:%P"
+      #filetype: regular # 'regular', 'unix_stream' or 'unix_dgram'
+
+  # a line based log of TLS handshake parameters (no alerts)
+  - tls-log:
+      enabled: yes  # Log TLS connections.
+      filename: tls.log # File to store TLS logs.
+      append: yes
+      #filetype: regular # 'regular', 'unix_stream' or 'unix_dgram'
+      #extended: yes # Log extended information like fingerprint
+      certs-log-dir: certs # directory to store the certificates files
+
+  # a line based log of DNS requests and/or replies (no alerts)
+  - dns-log:
+      enabled: yes
+      filename: dns.log
+      append: yes
+  # - elastalert:
+  #     enabled: yes
+  #     type: alert
+  #     match: any
+  #     index: suricata-alerts
+  #     elasticsearch:
+  #       host: elasticsearch_host
+  #       port: elasticsearch_port
+  #     alerts:
+  #       - "elastalert"
+  #     types:
+  #       - alert
+  #       - http.log
+  #       - dns.log
+  #     tls:
+  #       verify: off
+
+# Custom rule configuration for OWASP Top 10 vulnerabilities
+rule-sets:
+  - from-files:
+      - /etc/suricata/rules/suricata.rules
+      - /etc/suricata/rules/emerging_threats.rules
+      # - /etc/suricata/rules/owasp-top10.rules
+      # - /etc/suricata/rules/mac-address.rules
+      # - /etc/suricata/rules/http-user-agents.rules

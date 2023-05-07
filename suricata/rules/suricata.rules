@@ -1,0 +1,78 @@
+# suricata.rules
+
+# Rule to detect SSH brute-force attacks
+alert tcp $EXTERNAL_NET any -> $HOME_NET 22 \
+    (msg:"SSH Brute-force Attack detected"; \
+    flow:to_server,established; \
+    content:"Failed password"; \
+    threshold:type limit,track by_src,count 5,seconds 60; \
+    reference:url,owasp.org; \
+    sid:200001; rev:1;)
+
+# Rule to detect HTTP SQL Injection
+alert http $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"HTTP SQL Injection detected"; \
+    flow:to_server,established; \
+    content:"' OR 1=1"; http_client_body; \
+    reference:url,owasp.org; \
+    sid:200002; rev:1;)
+
+# Rule to detect DNS Amplification DDoS attacks
+alert udp $EXTERNAL_NET any -> $HOME_NET 53 \
+    (msg:"DNS Amplification DDoS Attack detected"; \
+    dsize:>2048; \
+    threshold:type limit,track by_src,count 100,seconds 60; \
+    reference:url,owasp.org; \
+    sid:200003; rev:1;)
+
+# Rule to detect FTP command injection
+alert ftp $EXTERNAL_NET any -> $HOME_NET any \
+    (msg:"FTP Command Injection detected"; \
+    flow:to_server,established; \
+    content:"|"; ftp_command; \
+    reference:url,owasp.org; \
+    sid:200004; rev:1;)
+
+# Rule to detect TCP SYN flood attacks
+alert tcp $EXTERNAL_NET any -> $HOME_NET any \
+    (msg:"TCP SYN Flood Attack detected"; \
+    flow:stateless; \
+    flags:S,12; \
+    threshold:type threshold,track by_src,count 50,seconds 10; \
+    reference:url,owasp.org; \
+    sid:200005; rev:1;)
+
+# Rule to detect XSS attacks
+alert http $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS \
+    (msg:"XSS Attack detected"; \
+    flow:to_server,established; \
+    content:"<script>"; http_client_body; \
+    reference:url,owasp.org; \
+    sid:200006; rev:1;)
+
+# Rule to detect ICMP flood attacks
+alert icmp $EXTERNAL_NET any -> $HOME_NET any \
+    (msg:"ICMP Flood Attack detected"; \
+    threshold:type threshold,track by_src,count 500,seconds 60; \
+    reference:url,owasp.org; \
+    sid:200007; rev:1;)
+
+# Rule to detect FTP brute-force attacks
+alert tcp $EXTERNAL_NET any -> $HOME_NET 21 \
+    (msg:"FTP Brute-force Attack detected"; \
+    flow:to_server,established; \
+    content:"530 Login incorrect"; \
+    threshold:type limit,track by_src,count 3,seconds 60; \
+    reference:url,owasp.org; \
+    sid:200008; rev:1;)
+
+# Rule to detect SMB brute-force attacks
+alert tcp $EXTERNAL_NET any -> $HOME_NET 445 \
+    (msg:"SMB Brute-force Attack detected"; \
+    flow:to_server,established; \
+    content:"NT_STATUS_LOGON_FAILURE"; \
+    threshold:type limit,track by_src,count 5,seconds 60; \
+    reference:url,owasp.org; \
+    sid:200009; rev:1;)
+
+# Rule to detect
