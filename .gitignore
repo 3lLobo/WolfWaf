@@ -2,3 +2,6 @@
 *.pcap
 
 .env
+eve.json
+
+wireshark/*

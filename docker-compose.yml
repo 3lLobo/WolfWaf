@@ -16,7 +16,7 @@ services:
     volumes:
       # - ./suricata:/etc/suricata
       - ./suricata-logs:/var/log/suricata
-    network_mode: "service:webapp"
+    network_mode: service:webapp
     # network_mode: host
     cap_add:
       - NET_ADMIN
@@ -26,9 +26,8 @@ services:
 
   modsecurity:
     image: owasp/modsecurity-crs:nginx
-    # name: modsecurity
     volumes:
-      - ./modsecurity:/etc/modsecurity
+      # - ./modsecurity:/etc/modsecurity
       - ./nginx/nginx.conf:/etc/nginx/templates/nginx.conf
       - ./modsecurity/modsecurity2.conf:/etc/templates/conf.d/modsecurity.conf.template
       - ./modsecurity-logs/:/var/log/
@@ -42,15 +41,15 @@ services:
       - PARANOIA=1
       - EXECUTING_PARANOIA=2
       - ENFORCE_BODYPROC_URLENCODED=1
-      - ANOMALY_INBOUND=10
-      - ANOMALY_OUTBOUND=5
-      - ALLOWED_METHODS="GET POST PUT"
-      - ALLOWED_REQUEST_CONTENT_TYPE="text/xml|application/xml|text/plain"
-      - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET="utf-8|iso-8859-1"
-      - ALLOWED_HTTP_VERSIONS="HTTP/1.1 HTTP/2 HTTP/2.0"
-      - RESTRICTED_EXTENSIONS=".cmd/ .com/ .config/ .dll/"
-      - RESTRICTED_HEADERS="/proxy/ /if/"
-      - STATIC_EXTENSIONS="/.jpg/ /.jpeg/ /.png/ /.gif/"
+      - ANOMALY_INBOUND=100000 # Block Threshold
+      - ANOMALY_OUTBOUND=50000 # Block Threshold
+      - ALLOWED_METHODS=GET POST PUT
+      - ALLOWED_REQUEST_CONTENT_TYPE=text/xml|application/xml|text/plain
+      - ALLOWED_REQUEST_CONTENT_TYPE_CHARSET=utf-8|iso-8859-1
+      - ALLOWED_HTTP_VERSIONS=HTTP/1.1 HTTP/2 HTTP/2.0
+      - RESTRICTED_EXTENSIONS=.cmd/ .com/ .config/ .dll/
+      - RESTRICTED_HEADERS=/proxy/ /if/
+      - STATIC_EXTENSIONS=/.jpg/ /.jpeg/ /.png/ /.gif/
       - MAX_NUM_ARGS=128
       - ARG_NAME_LENGTH=50
       - ARG_LENGTH=200
@@ -91,7 +90,7 @@ services:
     #   ports:
     #     - '80:80'
     #   # Start nginx with custom conf
-    #   # entrypoint: /bin/bash -c "nginx -c /etc/nginx/nginx.conf && tail -f /dev/null"
+    #   # entrypoint: /bin/bash -c nginx -c /etc/nginx/nginx.conf && tail -f /dev/null
     #   environment:
     #     - PORT=80
     #   depends_on:
@@ -101,22 +100,43 @@ services:
 
   zeek:
     image: zeek/zeek
-    # name: zeek
     command: zeek -i eth0 -C zeek/zeek-config.zeek
     volumes:
       - ./zeek:/zeek
       - ./zeek-logs:/usr/local/zeek/logs
-    # network_mode: "service:webapp"
-    network_mode: host
+    network_mode: service:webapp
+    # network_mode: host
     cap_add:
       - NET_ADMIN
       - NET_RAW
       - SYS_NICE
     # This Zeek service captures and analyzes network traffic using the zeek image. Mount local directories for configuration files and log storage.
 
+  wireshark:
+    image: linuxserver/wireshark
+    # ports:
+    #   - 8080:8080 #optional
+    #   - 3001:3001 #optional
+    # network_mode: host
+    network_mode: service:webapp
+    container_name: wireshark
+    cap_add:
+      - NET_ADMIN
+    # This Wireshark service runs a web interface for viewing network traffic on port 8080.
+    environment:
+      - PUID=1000
+      - PGID=1000 # CMD id to get UID and PGID
+      - TZ=Europe/London
+      - CUSTOM_PORT=8080
+      - CUSTOM_USER=wolf
+      - CUSTOM_PASS=${WIRESHARK_PWD}
+    volumes:
+      - ./wireshark:/config
+      - ./wireshark-logs:/captures
+    # The Wireshark service mounts local directories for configuration files and log storage.
+
     # tshark:
     #   image: toendeavour/tshark
-    #   # name: tshark
     #   command: -i eth0 -w /captures/capture.pcap
     #   volumes:
     #     - ./captures:/captures
@@ -126,7 +146,6 @@ services:
     #   # The tshark service captures network traffic on the host interface (eth0) and saves it to a file in the 'captures' directory.
 
     # logstash:
-    #   # name: logstash
     #   image: docker.elastic.co/logstash/logstash:8.7.1
     #   volumes_from:
     #     - zeek
